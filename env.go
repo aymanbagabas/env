@@ -226,17 +226,29 @@ func doParseField(refField reflect.Value, refTypeField reflect.StructField, func
 	if !refField.CanSet() {
 		return nil
 	}
+
+	// init a nil pointer
+	if reflect.Ptr == refField.Kind() && refField.IsNil() {
+		v := reflect.New(refField.Type().Elem())
+		refField.Set(v)
+		return ParseWithFuncs(refField.Elem().Addr().Interface(), funcMap, optsWithPrefix(refTypeField, opts)...)
+	}
+
+	// parse pointer to struct
 	if reflect.Ptr == refField.Kind() && refField.Elem().Kind() == reflect.Struct {
 		return ParseWithFuncs(refField.Interface(), funcMap, optsWithPrefix(refTypeField, opts)...)
 	}
+
+	// parse a struct
 	if reflect.Struct == refField.Kind() && refField.CanAddr() && refField.Type().Name() == "" {
 		return ParseWithFuncs(refField.Addr().Interface(), funcMap, optsWithPrefix(refTypeField, opts)...)
 	}
+
+	// its a field!
 	value, err := get(refTypeField, opts)
 	if err != nil {
 		return err
 	}
-
 	if value != "" {
 		return set(refField, refTypeField, value, funcMap)
 	}

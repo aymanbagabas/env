@@ -1395,15 +1395,29 @@ func TestPrefixPointers(t *testing.T) {
 		Clean *Test
 	}
 
-	cfg := ComplexConfig{
-		Foo:   &Test{},
-		Bar:   &Test{},
-		Clean: &Test{},
+	verify := func(tb testing.TB, cfg ComplexConfig) {
+		tb.Helper()
+		isNoErr(t, Parse(&cfg, Options{Environment: map[string]string{
+			"FOO_TEST": "kek",
+			"BAR_TEST": "lel",
+			"TEST":     "clean",
+		}}))
+		isEqual(tb, "kek", cfg.Foo.Str)
+		isEqual(tb, "lel", cfg.Bar.Str)
+		isEqual(tb, "clean", cfg.Clean.Str)
 	}
-	isNoErr(t, Parse(&cfg, Options{Environment: map[string]string{"FOO_TEST": "kek", "BAR_TEST": "lel", "TEST": "clean"}}))
-	isEqual(t, "kek", cfg.Foo.Str)
-	isEqual(t, "lel", cfg.Bar.Str)
-	isEqual(t, "clean", cfg.Clean.Str)
+
+	t.Run("initialized", func(t *testing.T) {
+		verify(t, ComplexConfig{
+			Foo:   &Test{},
+			Bar:   &Test{},
+			Clean: &Test{},
+		})
+	})
+
+	t.Run("nil ptrs", func(t *testing.T) {
+		verify(t, ComplexConfig{})
+	})
 }
 
 func TestNestedPrefixPointer(t *testing.T) {
